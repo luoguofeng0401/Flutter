@@ -1,15 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
+import 'package:image_picker/image_picker.dart';
 
-List<CameraDescription> cameras;
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  cameras = await availableCameras();
+void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -30,31 +27,41 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  CameraController controller;
+  File _image;
+  ImagePicker imagePicker;
+
   @override
   void initState() {
     super.initState();
-    controller = CameraController(cameras[0], ResolutionPreset.max);
-    controller.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
-      controller.startImageStream((image) => {
-      });
-      setState(() {});
+    imagePicker = ImagePicker();
+  }
+  Future<void> captureImageFromCamera() async {
+    PickedFile pickedFile = await imagePicker.getImage(source: ImageSource.camera);
+    setState(() {
+      _image = File(pickedFile.path);
     });
   }
-
+  Future<void> chooseImageFromGallery() async {
+    PickedFile pickedFile = await imagePicker.getImage(source: ImageSource.gallery);
+    setState(() {
+      _image = File(pickedFile.path);
+    });
+  }
   @override
   Widget build(BuildContext context) {
-    if(controller.value.isInitialized) {
-      return Scaffold(
-        body: MaterialApp(
-          home: CameraPreview(controller),
-        ), // This trailing comma makes auto-formatting nicer for build methods.
-      );
-    }else{
-      return Container();
-    }
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            _image != null?Image.file(_image):Icon(Icons.image, size: 100, ),
+            RaisedButton(child:Text("choose/capture"),onPressed: (){chooseImageFromGallery();},onLongPress:(){captureImageFromCamera();})
+          ],
+        ),
+      ),
+    );
   }
 }
